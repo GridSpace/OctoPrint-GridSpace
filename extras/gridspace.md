@@ -15,25 +15,19 @@ archive: https://github.com/GridSpace/OctoPrint-GridSpace/archive/master.zip
 
 #follow_dependency_links: false
 
-# TODO
 tags:
-- a list
-- of tags
-- that apply
-- to your plugin
+- slicer
+- slicer print
+- remote print
+- print export
+- print spooler
 
-# TODO
 screenshots:
-- url: url of a screenshot, /assets/img/...
-  alt: alt-text of a screenshot
-  caption: caption of a screenshot
-- url: url of another screenshot, /assets/img/...
-  alt: alt-text of another screenshot
-  caption: caption of another screenshot
-- ...
+- url: https://static.grid.space/img/Kiri-In-OctoPrint.png
+  alt: Kiri:Moto Tab in OctoPrint
+  caption: Kiri:Moto Tab in OctoPrint
 
-# TODO
-featuredimage: url of a featured image for your plugin, /assets/img/...
+featuredimage: https://static.grid.space/img/Kiri-In-OctoPrint.png
 
 compatibility:
 

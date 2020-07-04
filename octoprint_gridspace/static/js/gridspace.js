@@ -1,5 +1,5 @@
 /*
- * View model for OctoPrint-WebcamIframe
+ * View model for OctoPrint-Iframe
  *
  * Author: jneilliii
  * License: MIT
