@@ -48,7 +48,7 @@ def background_spool(file_saver, get_name, logger):
                         "port":5000,
                         "mode":"octo",
                         "addr":[addr]
-                    },"state":"ready"}
+                    },"state":"ready","rand":round(time.time())}
             stat = urllib.parse.quote_plus(json.dumps(stat, separators=(',', ':')))
             url = "https://grid.space/api/grid_up?uuid={uuid}&stat={stat}".format(uuid=uuid,stat=stat)
             response = requests.get(url)
