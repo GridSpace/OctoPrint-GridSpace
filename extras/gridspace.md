@@ -13,9 +13,13 @@ homepage: https://github.com/GridSpace/OctoPrint-GridSpace
 source: https://github.com/GridSpace/OctoPrint-GridSpace
 archive: https://github.com/GridSpace/OctoPrint-GridSpace/archive/master.zip
 
-#follow_dependency_links: false
+follow_dependency_links: false
 
 tags:
+- gcode
+- spooler
+- browser
+- network
 - slicer
 - slicer print
 - remote print
@@ -38,6 +42,9 @@ compatibility:
 
 ---
 
-**About**
-http://plugins.octoprint.org/plugin/gridspace/
-Allows for direct printing from GridSpace's Kiri:Moto slicer
+This plugin allows for direct printing from GridSpace's Kiri:Moto slicer
+to any OctoPrint servers on your local network with zero configuration.
+
+It also adds an iframe tab to OctoPrint's interface that embeds the
+Kiri:Moto web-based slicer. In addition to being a full-blown slicer,
+Kiri:Moto includes gcode visualization.
