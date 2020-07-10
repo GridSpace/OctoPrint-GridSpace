@@ -50,7 +50,7 @@ def background_spool(file_saver, get_name, logger):
                         "addr":[addr]
                     },"state":"ready","rand":round(time.time())}
             stat = urllib.parse.quote_plus(json.dumps(stat, separators=(',', ':')))
-            url = "https://grid.space/api/grid_up?uuid={uuid}&stat={stat}".format(uuid=uuid,stat=stat)
+            url = "https://live.grid.space/api/grid_up?uuid={uuid}&stat={stat}".format(uuid=uuid,stat=stat)
             response = requests.get(url)
         except ConnectionError as error:
             logger.info('connection error {}'.format(error))
