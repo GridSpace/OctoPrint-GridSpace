@@ -34,6 +34,7 @@ from requests.exceptions import HTTPError
 from requests.exceptions import ConnectionError
 
 def background_spool(file_saver, get_name, logger):
+    count = 0
     while True:
         logger.debug('connecting')
         try:
@@ -49,6 +50,10 @@ def background_spool(file_saver, get_name, logger):
                         "mode":"octo",
                         "addr":[addr]
                     },"state":"ready","rand":round(time.time())}
+            if count < 2:
+                logger.info('connect {} = [{}] {}'.format(count,uuid,stat))
+            else:
+                logger.debug('connect {} = [{}] {}'.format(count,uuid,stat))
             stat = urllib.parse.quote_plus(json.dumps(stat, separators=(',', ':')))
             url = "https://live.grid.space/api/grid_up?uuid={uuid}&stat={stat}".format(uuid=uuid,stat=stat)
             response = requests.get(url)
@@ -61,12 +66,16 @@ def background_spool(file_saver, get_name, logger):
             time.sleep(5)
             break
         except Timeout:
-            logger.info('timeout')
+            logger.info('connection timeout')
             time.sleep(1)
             continue
+        finally:
+            count = count + 1
 
         if response:
             text = response.text
+            if count < 2:
+                logger.info('response = {}'.format(text))
             if text == 'superceded':
                 logger.info('superceded')
                 break
