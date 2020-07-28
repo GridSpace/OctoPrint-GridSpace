@@ -36,7 +36,7 @@ from requests.exceptions import ConnectionError
 def background_spool(file_saver, get_name, logger):
     count = 0
     while True:
-        logger.debug('connecting')
+        logger.debug('v0.1.5 connecting')
         try:
             uuid = socket.getfqdn()
             host = socket.gethostname()
@@ -162,7 +162,7 @@ class GridspacePlugin(octoprint.plugin.SettingsPlugin,
         )
 
 __plugin_name__ = "GridSpace Plugin"
-__plugin_pythoncompat__ = ">=2.7,<4"
+__plugin_pythoncompat__ = ">=3,<4"
 
 def __plugin_load__():
     global __plugin_implementation__
