@@ -33,15 +33,15 @@ from requests.exceptions import Timeout
 from requests.exceptions import HTTPError
 from requests.exceptions import ConnectionError
 
-def background_spool(file_saver, get_name, logger):
+def background_spool(file_saver, get_name, logger, version):
     count = 0
     while True:
-        logger.debug('v0.1.5 connecting')
+        logger.debug('v{} connecting'.format(version))
         try:
             uuid = socket.getfqdn()
             host = socket.gethostname()
             name = get_name() or host
-            addr = str(socket.gethostbyname(host))
+            addr = str(socket.gethostbyname(uuid))
             stat = {"device":{
                         "name":name,
                         "host":host,
@@ -49,7 +49,10 @@ def background_spool(file_saver, get_name, logger):
                         "port":5000,
                         "mode":"octo",
                         "addr":[addr]
-                    },"state":"ready","rand":round(time.time())}
+                    },
+                    "state":"ready",
+                    "rand":round(time.time()),
+                    "type":"op-{}".format(version)}
             if count < 2:
                 logger.info('connect {} = [{}] {}'.format(count,uuid,stat))
             else:
@@ -132,7 +135,8 @@ class GridspacePlugin(octoprint.plugin.SettingsPlugin,
         thread = threading.Thread(target=background_spool, kwargs=({
             "file_saver": self.file_saver,
             "get_name": self.get_name,
-            "logger": self._logger
+            "logger": self._logger,
+            "version": self._plugin_version
         }))
         thread.daemon = True
         thread.start()
