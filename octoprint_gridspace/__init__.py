@@ -33,7 +33,7 @@ from requests.exceptions import Timeout
 from requests.exceptions import HTTPError
 from requests.exceptions import ConnectionError
 
-def background_spool(file_saver, get_name, logger, version):
+def background_spool(file_saver, get_name, ip_addr, logger, version):
     count = 0
     while True:
         logger.debug('v{} connecting'.format(version))
@@ -41,12 +41,12 @@ def background_spool(file_saver, get_name, logger, version):
             uuid = socket.getfqdn()
             host = socket.gethostname()
             name = get_name() or host
-            addr = str(socket.gethostbyname(uuid))
+            addr = ip_addr or str(socket.gethostbyname(uuid))
             stat = {"device":{
                         "name":name,
                         "host":host,
                         "uuid":uuid,
-                        "port":5000,
+                        "port":80,
                         "mode":"octo",
                         "addr":[addr]
                     },
@@ -110,7 +110,17 @@ class GridspacePlugin(octoprint.plugin.SettingsPlugin,
         self._start_time = monotonic_time()
 
     def initialize(self):
-        self._logger.debug('initialize')
+        logger = self._logger
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            sock.connect(('8.8.8.8', 80))
+            ip_addr = sock.getsockname()[0]
+            self._ip_addr = ip_addr
+            logger.info('ip_addr = {}'.format(ip_addr))
+        except socket.error:
+            logger.info('ip_addr error')
+        finally:
+            sock.close()
 
     def file_saver(self, filename, gcode):
         self._file_manager.add_file("local", filename, FileSaveWrapper(gcode))
@@ -135,6 +145,7 @@ class GridspacePlugin(octoprint.plugin.SettingsPlugin,
         thread = threading.Thread(target=background_spool, kwargs=({
             "file_saver": self.file_saver,
             "get_name": self.get_name,
+            "ip_addr": self._ip_addr,
             "logger": self._logger,
             "version": self._plugin_version
         }))
