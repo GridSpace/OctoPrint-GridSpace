@@ -24,6 +24,7 @@ from octoprint.filemanager.util import DiskFileWrapper
 
 import json
 import time
+import uuid
 import urllib
 import socket
 import requests
@@ -33,33 +34,35 @@ from requests.exceptions import Timeout
 from requests.exceptions import HTTPError
 from requests.exceptions import ConnectionError
 
-def background_spool(file_saver, get_name, ip_addr, logger, version):
+def background_spool(file_saver, get_name, ip_addr, port, guid, grid, logger, version):
+    last = "*"
     count = 0
     while True:
         logger.debug('v{} connecting'.format(version))
         try:
-            uuid = socket.getfqdn()
+            fqdn = socket.getfqdn()
             host = socket.gethostname()
             name = get_name() or host
-            addr = ip_addr or str(socket.gethostbyname(uuid))
+            addr = ip_addr or str(socket.gethostbyname(fqdn))
             stat = {"device":{
-                        "name":name,
-                        "host":host,
-                        "uuid":uuid,
-                        "port":80,
-                        "mode":"octo",
-                        "addr":[addr]
+                        "name": name,
+                        "host": host,
+                        "uuid": guid,
+                        "port": port,
+                        "mode": "octo",
+                        "addr": [addr]
                     },
                     "state":"ready",
                     "rand":round(time.time()),
                     "type":"op-{}".format(version)}
             if count < 2:
-                logger.info('connect {} = [{}] {}'.format(count,uuid,stat))
+                logger.info('connect {} {} = [{}] {}'.format(count,grid,guid,stat))
             else:
-                logger.debug('connect {} = [{}] {}'.format(count,uuid,stat))
+                logger.debug('connect {} {} = [{}] {}'.format(count,grid,guid,stat))
             stat = urllib.parse.quote_plus(json.dumps(stat, separators=(',', ':')))
-            url = "https://live.grid.space/api/grid_up?uuid={uuid}&stat={stat}".format(uuid=uuid,stat=stat)
+            url = "{grid}/api/grid_up?uuid={guid}&stat={stat}&last={last}".format(grid=grid,guid=guid,stat=stat,last=last)
             response = requests.get(url)
+            last = "*";
         except ConnectionError as error:
             logger.info('connection error {}'.format(error))
             time.sleep(10)
@@ -86,6 +89,7 @@ def background_spool(file_saver, get_name, ip_addr, logger, version):
                 logger.debug('reconnect')
             else:
                 body = text.split('\0')
+                last = body[0]
                 file = body[0]
                 gcode = body[1]
                 logger.info('received "{}" length={}'.format(file,len(gcode)))
@@ -121,6 +125,15 @@ class GridspacePlugin(octoprint.plugin.SettingsPlugin,
             logger.info('ip_addr error')
         finally:
             sock.close()
+        try:
+            guid = self._settings.get(["guid"])
+            if guid is None:
+                guid = str(uuid.uuid4())
+                self._settings.set(["guid"], guid)
+                self._settings.save()
+            logger.info('guid = {}'.format(guid))
+        except:
+            logger.info('guid fail')
 
     def file_saver(self, filename, gcode):
         self._file_manager.add_file("local", filename, FileSaveWrapper(gcode))
@@ -129,23 +142,40 @@ class GridspacePlugin(octoprint.plugin.SettingsPlugin,
         return self._settings.global_get(["appearance", "name"])
 
     def get_settings_defaults(self):
-        return dict(enabled=None,appearance=dict(name="aname"))
+        return dict(
+            enabled=None,
+            appearance=dict(name="aname"),
+            host="https://live.grid.space",
+            port=80,
+            guid=None
+        )
 
     def on_settings_save(self, data):
-        self._logger.debug('settings_save')
+        self._logger.info('settings_save')
+        old_port = self._settings.get_int(["port"])
+        octoprint.plugin.SettingsPlugin.on_settings_save(self, data)
+        new_port = self._settings.get_int(["port"])
+        if old_port != new_port:
+            self._logger.debug("port changed to {} reinitializing".format(data["port"]))
+            self.on_after_startup()
 
     def on_environment_detected(self, environment, *args, **kwargs):
         self._environment = environment
 
     def get_assets(self):
-        return dict(css=["css/gridspace.css"],
-                    js=["js/gridspace.js"])
+        return dict(css=["css/gridspace.css"], js=["js/gridspace.js"])
+
+    def get_template_configs(self):
+        return [dict(type="settings", custom_bindings=False)]
 
     def on_after_startup(self):
         thread = threading.Thread(target=background_spool, kwargs=({
             "file_saver": self.file_saver,
             "get_name": self.get_name,
             "ip_addr": self._ip_addr,
+            "port": self._settings.get_int(["port"]),
+            "guid": self._settings.get(["guid"]),
+            "grid": self._settings.get(["host"]),
             "logger": self._logger,
             "version": self._plugin_version
         }))
@@ -154,7 +184,7 @@ class GridspacePlugin(octoprint.plugin.SettingsPlugin,
         self._thread = thread
 
     def on_event(self, event, payload):
-        self._logger.debug('event {} {}'.format(event,payload))
+        self._logger.debug('event {} {}'.format(event, payload))
 
     def get_update_information(self):
         # Define the configuration for your plugin to use with the Software Update
