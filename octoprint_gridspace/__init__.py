@@ -34,10 +34,11 @@ from requests.exceptions import Timeout
 from requests.exceptions import HTTPError
 from requests.exceptions import ConnectionError
 
-def background_spool(file_saver, get_name, ip_addr, port, guid, grid, logger, version):
+def background_spool(file_saver, get_name, ip_addr, port, guid, grid, logger, version, exit):
     last = "*"
     count = 0
-    while True:
+    logger.info('v{} thread start'.format(version))
+    while not exit.is_set():
         logger.debug('v{} connecting'.format(version))
         try:
             fqdn = socket.getfqdn()
@@ -94,6 +95,7 @@ def background_spool(file_saver, get_name, ip_addr, port, guid, grid, logger, ve
                 gcode = body[1]
                 logger.info('received "{}" length={}'.format(file,len(gcode)))
                 file_saver(file, gcode)
+    logger.info('v{} thread exit'.format(version))
 
 class FileSaveWrapper:
     def __init__(self, gcode):
@@ -112,6 +114,7 @@ class GridspacePlugin(octoprint.plugin.SettingsPlugin,
 
     def __init__(self):
         self._start_time = monotonic_time()
+        self._started = 0
 
     def initialize(self):
         logger = self._logger
@@ -152,12 +155,8 @@ class GridspacePlugin(octoprint.plugin.SettingsPlugin,
 
     def on_settings_save(self, data):
         self._logger.info('settings_save')
-        old_port = self._settings.get_int(["port"])
         octoprint.plugin.SettingsPlugin.on_settings_save(self, data)
-        new_port = self._settings.get_int(["port"])
-        if old_port != new_port:
-            self._logger.debug("port changed to {} reinitializing".format(data["port"]))
-            self.on_after_startup()
+        self.on_after_startup()
 
     def on_environment_detected(self, environment, *args, **kwargs):
         self._environment = environment
@@ -169,6 +168,9 @@ class GridspacePlugin(octoprint.plugin.SettingsPlugin,
         return [dict(type="settings", custom_bindings=False)]
 
     def on_after_startup(self):
+        if self._started > 0:
+            self._exit_flag.set()
+        exit_flag = threading.Event();
         thread = threading.Thread(target=background_spool, kwargs=({
             "file_saver": self.file_saver,
             "get_name": self.get_name,
@@ -177,11 +179,14 @@ class GridspacePlugin(octoprint.plugin.SettingsPlugin,
             "guid": self._settings.get(["guid"]),
             "grid": self._settings.get(["host"]),
             "logger": self._logger,
-            "version": self._plugin_version
+            "version": self._plugin_version,
+            "exit": exit_flag
         }))
         thread.daemon = True
         thread.start()
         self._thread = thread
+        self._exit_flag = exit_flag
+        self._started = self._started + 1
 
     def on_event(self, event, payload):
         self._logger.debug('event {} {}'.format(event, payload))
