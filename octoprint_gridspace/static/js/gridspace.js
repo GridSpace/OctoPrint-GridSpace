@@ -11,7 +11,7 @@ $(function() {
         self.settingsViewModel = parameters[0];
         self.onTabChange = function(current, previous) {
             if (current === "#tab_plugin_gridspace" && !self.gridspace_initialized()) {
-                $('#gridspace_iframe').attr("src", "https://grid.space/kiri/");
+                $('#gridspace_iframe').attr("src", "https://grid.space/op.html");
                 self.gridspace_initialized(true);
             }
         };
