@@ -1,5 +1,5 @@
 <iframe id="gridspace_iframe" src="about:blank"></iframe>
-<button class="btn btn-mini pull-right fs-toggle" data-bind="click: maximize_gridspace"><i class="fas fa-expand"></i></button>
+<button class="btn btn-mini pull-right fs-toggle" data-bind="click: maximize_gridspace, visible: !settingsViewModel.settings.plugins.gridspace.show_help()"><i class="fas fa-expand"></i></button>
 <div class="row-fluid" data-bind="visible: settingsViewModel.settings.plugins.gridspace.show_help()">
     <button class="btn" data-bind="click: hide_help">Hide Help</button>
 </div>
