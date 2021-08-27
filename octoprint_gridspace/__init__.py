@@ -150,7 +150,8 @@ class GridspacePlugin(octoprint.plugin.SettingsPlugin,
             appearance=dict(name="aname"),
             host="https://live.grid.space",
             port=80,
-            guid=None
+            guid=None,
+            show_help=True
         )
 
     def on_settings_save(self, data):
@@ -165,7 +166,7 @@ class GridspacePlugin(octoprint.plugin.SettingsPlugin,
         return dict(css=["css/gridspace.css"], js=["js/gridspace.js"])
 
     def get_template_configs(self):
-        return [dict(type="settings", custom_bindings=False)]
+        return [dict(type="settings", custom_bindings=True)]
 
     def on_after_startup(self):
         if self._started > 0:

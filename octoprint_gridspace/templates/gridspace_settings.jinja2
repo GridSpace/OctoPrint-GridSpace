@@ -1,0 +1,14 @@
+<h4>GridSpace Plugin Settings</h4>
+<form class="form-vertical" id="settings_plugin_gridspace_form">
+	<div class="control-group">
+		<label class="control-label">{{ _('OctoPrint Port') }}</label>
+		<div class="controls">
+            <input type="number" class="input-small" data-bind="value: settingsViewModel.settings.plugins.gridspace.port"/>
+		</div>
+	</div>
+	<div class="control-group">
+		<div class="controls">
+            <label class="checkbox"><input type="checkbox" data-bind="checked: settingsViewModel.settings.plugins.gridspace.show_help"/> {{ _('Show Help') }}</label>
+		</div>
+	</div>
+</form>
