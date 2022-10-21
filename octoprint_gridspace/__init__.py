@@ -19,9 +19,11 @@ import concurrent.futures
 
 from octoprint.util import RepeatedTimer, monotonic_time
 from octoprint.util.version import get_octoprint_version_string
-from octoprint.events import Events
+from octoprint.events import Events, eventManager
 from octoprint.filemanager.util import DiskFileWrapper
+from octoprint.filemanager.destinations import FileDestinations
 
+import os
 import json
 import time
 import uuid
@@ -139,7 +141,23 @@ class GridspacePlugin(octoprint.plugin.SettingsPlugin,
             logger.info('guid fail')
 
     def file_saver(self, filename, gcode):
-        self._file_manager.add_file("local", filename, FileSaveWrapper(gcode))
+        self._file_manager.add_file(FileDestinations.LOCAL, filename, FileSaveWrapper(gcode))
+        # FileManager only triggers AddFile events - triggering Events.UPLOAD allows other plugins
+        # to treat spooling the same as drag & drop.
+        #
+        # See https://github.com/OctoPrint/OctoPrint, src/octoprint/server/api/files.py for Events.UPLOAD payload spec
+        eventManager().fire(
+            Events.UPLOAD,
+            {
+                "name": os.path.basename(filename),
+                "path": filename,
+                "target": FileDestinations.LOCAL,
+                "select": False,
+                "print": False,
+                "effective_select": False,
+                "effective_print": False,
+            },
+        )
 
     def get_name(self):
         return self._settings.global_get(["appearance", "name"])
